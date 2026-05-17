@@ -14,7 +14,7 @@ function rewriteForProxy(url) {
 }
 
 const DEFAULT_HEADERS = {
-  'User-Agent': 'WorldMediaWindows/0.1.0',
+  'User-Agent': 'WorldMediaWindows/0.1.1',
   Accept: 'application/json, text/plain, */*',
 };
 
@@ -47,17 +47,14 @@ export async function get(url, opts = {}) {
     if (!res.ok) {
       throw new Error(`HTTP ${res.status} ${res.statusText || ''} for ${url}`.trim());
     }
-    if (opts.text) return await res.text();
-
     const ct = res.headers && res.headers.get ? res.headers.get('content-type') || '' : '';
+    const text = await res.text();
+    if (opts.text) return text;
+
     if (ct.includes('json') || ct.includes('javascript') || ct === '') {
-      try { return await res.json(); }
-      catch (_err) {
-        const text = await res.text();
-        try { return JSON.parse(text); } catch (_err2) { return text; }
-      }
+      try { return JSON.parse(text); } catch (_err) { return text; }
     }
-    return await res.text();
+    return text;
   } finally {
     if (timeoutHandle != null) clearTimeout(timeoutHandle);
   }

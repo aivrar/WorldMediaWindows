@@ -25,7 +25,12 @@ export function itemPassesFilters(it) {
 
   if (!onFavorites) {
     const activeQ = (view.lastQuery || '').trim();
-    if (activeQ && it.__query !== activeQ) return false;
+    if (activeQ) {
+      const tags = Array.isArray(it.__queries)
+        ? it.__queries
+        : (it.__query ? [it.__query] : []);
+      if (!tags.includes(activeQ)) return false;
+    }
   }
 
   if (!onFavorites

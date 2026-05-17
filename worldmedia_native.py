@@ -58,7 +58,7 @@ def find_port(preferred: int = DEFAULT_PORT) -> int:
 def configure_environment(port: int) -> tuple[Path, Path]:
     root = bundled_root()
     runtime = state_root()
-    for name in ("cache", "state", "logs"):
+    for name in ("cache", "state", "logs", "webview2_data"):
         (runtime / name).mkdir(parents=True, exist_ok=True)
 
     os.environ["WORLDMEDIA_APP_DIR"] = str(root)
@@ -117,7 +117,12 @@ def main() -> int:
                 min_size=(980, 660),
                 text_select=False,
             )
-            webview.start(gui="edgechromium", debug=False)
+            webview.start(
+                gui="edgechromium",
+                debug=False,
+                private_mode=False,
+                storage_path=str(runtime / "webview2_data"),
+            )
             return 0
         except Exception as exc:
             print(f"[native] WebView startup failed: {exc}", flush=True)

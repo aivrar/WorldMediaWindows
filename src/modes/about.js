@@ -6,7 +6,7 @@
  * shown are reference values; live counts live in Library's sidebar.
  */
 
-const VERSION = '0.1.0-windows';
+const VERSION = '0.1.1-windows';
 
 const SOURCES_INFO = [
   {

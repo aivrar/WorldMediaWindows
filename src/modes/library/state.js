@@ -38,7 +38,7 @@ export const view = {
   itemIndex: new Map(),       // id -> item
   currentId: null,
   sourceStatus: new Map(),    // sourceId -> { state, count, error? }
-  sourceCounts: new Map(),    // sourceId -> pagination offset in CURRENT view
+  sourceCounts: new Map(),    // sourceId -> browse pagination offset
   cumulativeCounts: new Map(),     // sourceId -> total seen this session
   cumulativeTypeCounts: new Map(), // type     -> total seen this session
   loading: false,             // initial-batch fetch in flight
@@ -68,16 +68,22 @@ export const thumbHydration = {
  *  and per-type cumulative counts.
  *
  *  Returns nothing — caller invokes render after. */
-export function addItems(items) {
-  const currentQ = (view.lastQuery || '').trim();
+export function addItems(items, queryTag = view.lastQuery) {
+  const currentQ = (queryTag || '').trim();
   for (const it of items) {
     if (!it || !it.id) continue;
     const existing = view.itemIndex.get(it.id);
     if (existing) {
-      existing.__query = currentQ;
+      if (currentQ) {
+        const tags = new Set(existing.__queries || (existing.__query ? [existing.__query] : []));
+        tags.add(currentQ);
+        existing.__queries = [...tags];
+        existing.__query = currentQ;
+      }
       continue;
     }
     it.__query = currentQ;
+    it.__queries = currentQ ? [currentQ] : [];
     view.itemIndex.set(it.id, it);
     view.items.push(it);
     const c = view.cumulativeCounts.get(it.source) || 0;

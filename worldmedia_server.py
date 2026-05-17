@@ -29,7 +29,7 @@ APP_NAME = "World Media"
 BASE_DIR = Path(__file__).resolve().parent
 ROOT = Path(os.environ.get("WORLDMEDIA_FRONTEND", BASE_DIR / "frontend")).resolve()
 PORT = int(os.environ.get("WORLDMEDIA_PORT") or os.environ.get("WORLDMEDIA_WINDOWS_PORT") or "9124")
-USER_AGENT = "WorldMediaWindows/0.1.0 (https://github.com/aivrar/worldmediawindows)"
+USER_AGENT = "WorldMediaWindows/0.1.1 (https://github.com/aivrar/worldmediawindows)"
 MAX_SIZE = 50 * 1024 * 1024
 TIMEOUT_SEC = 20
 
@@ -204,6 +204,8 @@ class WorldMediaHandler(http.server.SimpleHTTPRequestHandler):
             opener = urllib.request.build_opener(_AllowlistRedirectHandler())
             upstream = opener.open(req, timeout=TIMEOUT_SEC)
         except urllib.error.HTTPError as exc:
+            if self._is_expected_librivox_empty(target, exc):
+                return self._send_json({"books": []})
             return self._stream_upstream(exc, exc.status or 502)
         except urllib.error.URLError as exc:
             return self.send_error(HTTPStatus.BAD_GATEWAY, f"upstream error: {exc}")
@@ -213,6 +215,15 @@ class WorldMediaHandler(http.server.SimpleHTTPRequestHandler):
             return self.send_error(HTTPStatus.FORBIDDEN, str(exc))
 
         self._stream_upstream(upstream, upstream.status or 200)
+
+    @staticmethod
+    def _is_expected_librivox_empty(target: urllib.parse.SplitResult, exc: urllib.error.HTTPError) -> bool:
+        host = (target.hostname or "").lower()
+        return (
+            exc.status == HTTPStatus.NOT_FOUND
+            and host in {"librivox.org", "www.librivox.org"}
+            and target.path.rstrip("/") == "/api/feed/audiobooks"
+        )
 
     def _stream_upstream(self, upstream, status: int) -> None:
         try:

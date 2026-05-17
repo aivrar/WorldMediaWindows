@@ -65,9 +65,22 @@ export async function runSearch() {
   view.lastQuery = q;
   view.renderLimit = RENDER_LIMIT_INITIAL;
   view.sourceStatus.clear();
-  view.sourceCounts.clear();
-  view.exhausted = new Set();
-  view.loading = true;
+  const keepBrowseChain = view.sourceCounts.size > 0;
+  if (!q && keepBrowseChain) {
+    if (view.loadAbort) view.loadAbort.abort();
+    view.loading = false;
+    renderResults();
+    renderStatus();
+    updateSidebarCounts();
+    updateSentinelStatus();
+    queueMicrotask(() => maybeLoadMore());
+    return;
+  }
+  if (!keepBrowseChain) {
+    view.sourceCounts.clear();
+    view.exhausted = new Set();
+  }
+  view.loading = !q;
   if (view.loadAbort) view.loadAbort.abort();
   view.loadAbort = new AbortController();
   const signal = view.loadAbort.signal;
@@ -84,10 +97,14 @@ export async function runSearch() {
     onPartial: (sourceId, items) => {
       if (signal.aborted) return;
       if (gen !== view.searchGen) return;  // stale fetch
-      addItems(items);
-      const count = (view.sourceCounts.get(sourceId) || 0) + items.length;
-      view.sourceCounts.set(sourceId, count);
-      setSourceStatus(sourceId, { state: 'done', count });
+      addItems(items, q);
+      if (q) {
+        setSourceStatus(sourceId, { state: 'done', count: items.length });
+      } else {
+        const count = (view.sourceCounts.get(sourceId) || 0) + items.length;
+        view.sourceCounts.set(sourceId, count);
+        setSourceStatus(sourceId, { state: 'done', count });
+      }
       updateSidebarCounts();
       renderResults();
       updateSentinelStatus();
@@ -100,12 +117,13 @@ export async function runSearch() {
 
   const toFetch = fetchSourcesAllEnabled();
   for (const id of toFetch) setSourceStatus(id, { state: 'loading', count: 0 });
+  if (q) queueMicrotask(() => maybeLoadMore());
 
   const promises = toFetch.map(async (id) => {
     try {
       let items;
-      if (view.query.trim()) {
-        items = await searchOne(id, view.query.trim(), opts);
+      if (q) {
+        items = await searchOne(id, q, opts);
       } else {
         items = await browseOne(id, opts);
         if (opts.onPartial) opts.onPartial(id, items);
@@ -126,7 +144,7 @@ export async function runSearch() {
   // skimming the first batch and reaches the bottom, the next page is
   // typically already on screen.
   queueMicrotask(() => {
-    if (view.items.length > 0 && gen === view.searchGen) maybeLoadMore();
+    if (gen === view.searchGen) maybeLoadMore();
     updateSentinelStatus();
   });
 }
@@ -135,29 +153,10 @@ export async function runSearch() {
 
 export async function loadMore() {
   if (view.loading || view.loadingMore) return;
-
-  // If the user is mid-typing — view.query has been updated by the input
-  // event but the debounced runSearch hasn't fired yet to commit it to
-  // view.lastQuery — DON'T fetch. Spamming "askdfjlk" into the search box
-  // would otherwise cause each background loadMore to fire a gibberish
-  // search at every upstream source, all of which return empty and get
-  // marked exhausted, killing the chain. Re-check after a short delay so
-  // the chain naturally resumes once typing settles + the debounced
-  // runSearch commits a new query.
-  const liveQ = view.query.trim();
-  if (liveQ !== view.lastQuery) {
-    setTimeout(() => maybeLoadMore(), AUTO_CHAIN_MIN_GAP_MS);
-    return;
-  }
-
   view.loadingMore = true;
 
   const gen = view.searchGen;
   view.exhausted ||= new Set();
-  // Capture the query for this whole batch so per-source promises can't
-  // see a different value if the user starts typing mid-flight.
-  const q = liveQ;
-
   const sources = fetchSourcesAllEnabled();
   const promises = sources
     .filter((id) => !view.exhausted.has(id))
@@ -165,19 +164,17 @@ export async function loadMore() {
       try {
         const offset = view.sourceCounts.get(id) || 0;
         const opts = { limit: PAGE_SIZE, offset };
-        let items;
-        if (q) items = await searchOne(id, q, opts);
-        else items = await browseOne(id, opts);
+        const items = await browseOne(id, opts);
         if (gen !== view.searchGen) return;
         if (items && items.length) {
-          addItems(items);
+          addItems(items, '');
           view.sourceCounts.set(id, offset + items.length);
           setSourceStatus(id, { state: 'done', count: offset + items.length });
           updateSidebarCounts();
           renderResults();
           updateSentinelStatus();
         } else {
-          // Empty response -> upstream exhausted for this query.
+          // Empty response -> upstream exhausted for the browse stream.
           view.exhausted.add(id);
         }
       } catch (_) { /* ignore per-page errors */ }
@@ -187,6 +184,7 @@ export async function loadMore() {
   if (gen !== view.searchGen) {
     renderResults();
     updateSentinelStatus();
+    queueMicrotask(() => maybeLoadMore());
     return;
   }
   updateSentinelStatus();
@@ -208,7 +206,6 @@ export async function loadMore() {
  *  pool, not a fetch state). */
 export function maybeLoadMore() {
   if (view.loading || view.loadingMore) return;
-  if (view.items.length === 0) return;
   loadMore();
 }
 

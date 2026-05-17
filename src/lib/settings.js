@@ -5,7 +5,7 @@
 import { getState, saveSettings, setSourceEnabled, clearCache, subscribe } from './state.js';
 import { SOURCES } from './sources.js';
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1-windows';
 
 function buildModal() {
   const state = getState();
