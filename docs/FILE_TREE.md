@@ -17,6 +17,12 @@ WorldMediaWindows/
 |-- frontend/
 |   |-- assets/
 |   `-- index.html
+|-- screenshots/
+|   |-- 1.PNG
+|   |-- 2.PNG
+|   |-- 3.PNG
+|   |-- 4.PNG
+|   `-- 5.PNG
 |-- src/
 |   |-- adapters/
 |   |-- lib/
@@ -42,5 +48,6 @@ WorldMediaWindows/
 | `worldmedia_server.py` | Local HTTP server, static frontend host, allowlisted CORS proxy, shutdown API. |
 | `src/` | Vite frontend source. |
 | `frontend/` | Built frontend bundled into the exe. |
+| `screenshots/` | Root README screenshots, mirrored from the cross-compatible repo. |
 | `build_windows.py` | Builds frontend, writes PyInstaller spec, creates the one-file exe. |
 | `assets/` | App icon assets. |
