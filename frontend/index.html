@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>World Media</title>
+    <script>
+      window.WORLDMEDIA_PROXY = "/api/proxy?url=";
+    </script>
+    <script type="module" crossorigin src="/assets/index-rAxmXt79.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-L1gV_ojD.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-glyph" aria-hidden="true"></span>
+          <span class="brand-name">World Media</span>
+        </div>
+        <nav class="modes" id="modes-nav">
+          <button class="mode-btn is-active" data-mode="library">Library</button>
+          <button class="mode-btn" data-mode="tuner">Tuner</button>
+          <button class="mode-btn" data-mode="grid">Grid</button>
+          <button class="mode-btn" data-mode="discovery">Discovery</button>
+          <button class="mode-btn" data-mode="about">About</button>
+        </nav>
+        <div class="topbar-tools">
+          <div id="sleep-timer" class="sleep-timer"></div>
+          <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+          <button id="shutdown-btn" class="shutdown-btn" title="Shut down World Media" aria-label="Shut down">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+              <line x1="12" y1="2" x2="12" y2="12"/>
+            </svg>
+            <span>Shutdown</span>
+          </button>
+        </div>
+      </header>
+
+      <main id="view-host" class="view-host">
+        <div class="boot-state">
+          <div class="boot-spinner" aria-hidden="true"></div>
+          <p>Starting World Media…</p>
+        </div>
+      </main>
+
+      <footer id="player-bar" class="player-bar" hidden>
+        <div class="player-meta">
+          <img id="player-art" alt="" />
+          <div class="player-text">
+            <div id="player-title" class="player-title"></div>
+            <div id="player-source" class="player-source"></div>
+          </div>
+          <button id="player-fav" class="player-fav" type="button" title="Add to favorites" aria-label="Add to favorites" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="player-controls">
+          <button id="player-play" class="player-btn" aria-label="Play/Pause" title="Play/Pause">
+            <svg id="icon-play" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" hidden><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+          </button>
+          <button id="player-stop" class="player-btn" aria-label="Stop" title="Stop">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          </button>
+          <button id="player-next-broken" class="player-btn" hidden title="Try next source">Try next</button>
+        </div>
+        <div class="player-progress">
+          <span id="player-time" class="player-time">--:--</span>
+          <input id="player-seek" class="player-seek" type="range" min="0" max="100" value="0" disabled />
+          <span id="player-dur" class="player-time">--:--</span>
+        </div>
+        <div class="player-volume">
+          <button id="player-mute" class="player-btn" aria-label="Mute" title="Mute">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05a4.5 4.5 0 0 0 2.5-4.02z"/></svg>
+          </button>
+          <input id="player-volume" type="range" min="0" max="100" value="80" />
+        </div>
+      </footer>
+
+      <video id="video-el" hidden playsinline controls controlslist="nodownload"></video>
+      <audio id="audio-el" hidden></audio>
+    </div>
+
+    <div id="modal-host"></div>
+
+  </body>
+</html>

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Node/Vite
+node_modules/
+npm-debug.log*
+
+# Local runtime state
+cache/
+logs/
+state/
+webview2_data/
+
+# Build outputs
+build/
+dist/
+*.spec
+!worldmedia_native.spec
+
+# Browser/dev-tool artifacts
+.playwright-mcp/
+playwright-report/
+test-results/
+*.trace.zip
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# Local environment files
+.env
+.env.*
+!.env.example

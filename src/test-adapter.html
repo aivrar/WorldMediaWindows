@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Adapter Test Harness</title>
+    <style>
+      body { font-family: -apple-system, Segoe UI, sans-serif; padding: 24px; background: #14161b; color: #e8e9ec; }
+      h1 { font-size: 18px; margin: 0 0 12px; }
+      .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+      select, input, button { background: #1c1f26; color: #e8e9ec; border: 1px solid #2a2e38; padding: 6px 10px; border-radius: 6px; font: inherit; }
+      button { cursor: pointer; }
+      button:hover { background: #262a33; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+      th, td { border: 1px solid #2a2e38; padding: 6px 8px; text-align: left; vertical-align: top; }
+      th { background: #1c1f26; font-weight: 600; }
+      tr.invalid td { background: rgba(240, 72, 72, 0.12); }
+      img.thumb { width: 60px; height: 36px; object-fit: cover; background: #2a2e38; border-radius: 4px; }
+      .errs { color: #f04848; font-family: monospace; font-size: 11px; }
+      .status { color: #a4a8b3; margin-top: 8px; }
+      .summary { color: #a4a8b3; font-size: 13px; margin: 8px 0; }
+      .summary .ok { color: #4ade80; }
+      .summary .bad { color: #f04848; }
+    </style>
+  </head>
+  <body>
+    <h1>Adapter Test Harness</h1>
+    <p class="summary">For developer verification only. Calls a single adapter's <code>search()</code>, <code>browse()</code>, or <code>random()</code> and validates the returned items against the Unified Item Model.</p>
+    <div class="controls">
+      <label>Adapter:
+        <select id="adapter">
+          <option value="radio-browser">Radio Browser</option>
+          <option value="iptv-org">iptv-org</option>
+          <option value="internet-archive">Internet Archive</option>
+          <option value="nasa">NASA</option>
+          <option value="wikimedia">Wikimedia Commons</option>
+          <option value="librivox">LibriVox</option>
+        </select>
+      </label>
+      <label>Mode:
+        <select id="mode">
+          <option value="search">search()</option>
+          <option value="browse">browse()</option>
+          <option value="random">random()</option>
+        </select>
+      </label>
+      <label>Query:
+        <input id="query" type="text" value="news" />
+      </label>
+      <label>Limit:
+        <input id="limit" type="number" value="10" min="1" max="50" style="width: 60px;" />
+      </label>
+      <button id="run">Run</button>
+    </div>
+    <div class="status" id="status">Ready.</div>
+    <div class="summary" id="summary"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>thumb</th><th>title</th><th>source</th><th>type</th><th>stream_kind</th><th>stream_url</th><th>year</th><th>country</th><th>language</th><th>license</th><th>tags</th><th>validation</th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+
+    <script type="module">
+      import { validateItem } from './lib/item-model.js';
+
+      const $ = (id) => document.getElementById(id);
+      $('run').addEventListener('click', run);
+      async function run() {
+        const adapterId = $('adapter').value;
+        const mode = $('mode').value;
+        const query = $('query').value;
+        const limit = parseInt($('limit').value, 10) || 10;
+        const status = $('status');
+        const summary = $('summary');
+        const tbody = $('results');
+        tbody.innerHTML = '';
+        summary.innerHTML = '';
+        status.textContent = `Loading ${adapterId}.${mode}…`;
+        try {
+          const mod = await import(`./adapters/${adapterId}.js`);
+          const start = performance.now();
+          const items = await mod[mode](query, { limit });
+          const ms = (performance.now() - start).toFixed(0);
+          let ok = 0, bad = 0;
+          for (const it of items) {
+            const errs = validateItem(it);
+            if (errs.length === 0) ok++; else bad++;
+            const tr = document.createElement('tr');
+            if (errs.length > 0) tr.classList.add('invalid');
+            tr.innerHTML = `
+              <td>${it.thumbnail ? `<img class="thumb" src="${it.thumbnail}" referrerpolicy="no-referrer" />` : ''}</td>
+              <td>${escape(it.title)}</td>
+              <td>${escape(it.source)}</td>
+              <td>${escape(it.type)}</td>
+              <td>${escape(it.stream_kind)}</td>
+              <td title="${escape(it.stream_url)}"><code>${escape(truncate(it.stream_url, 60))}</code></td>
+              <td>${it.year ?? ''}</td>
+              <td>${escape(it.country)}</td>
+              <td>${escape(it.language)}</td>
+              <td>${escape(it.license)}</td>
+              <td>${escape((it.tags||[]).slice(0,3).join(', '))}</td>
+              <td class="${errs.length ? 'errs' : ''}">${errs.length ? errs.join('; ') : 'ok'}</td>
+            `;
+            tbody.appendChild(tr);
+          }
+          status.textContent = `Done in ${ms} ms.`;
+          summary.innerHTML = `<span class="ok">${ok} valid</span>, <span class="bad">${bad} invalid</span>, ${items.length} total.`;
+        } catch (err) {
+          status.textContent = 'Error: ' + (err && err.message || String(err));
+          console.error(err);
+        }
+      }
+      function escape(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+      }
+      function truncate(s, n) { s = String(s||''); return s.length > n ? s.slice(0, n) + '…' : s; }
+    </script>
+  </body>
+</html>
